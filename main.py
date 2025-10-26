@@ -94,6 +94,7 @@ def reservarSala():
             if opcionCancelar == "S":
                 return
             elif opcionCancelar == "N":
+                mostrarClientes()
                 continue
             else:
                 print("⚠︎ Opción no reconocida.")
@@ -408,7 +409,7 @@ def editarEvento():
                 continue
 
         try:
-            with sqlite3.connect("estado.db") as conn:
+            with sqlite3.connect("estado.db", detect_types=sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES) as conn:
                 miCursor = conn.cursor()
                 miCursor.execute("""
                     SELECT
@@ -436,15 +437,15 @@ def editarEvento():
                         print("⚠︎ Opción no reconocida.")
                         continue
 
-                print(f"\nEVENTOS REGISTRADOS ENTRE EL {inicioRango.strftime('%d %b %Y')} Y EL {finRango.strftime('%d %b %Y')}:")
-                print("*" * 100)
-                print(f"{'Clave':<10}{'Fecha':<20}{'Nombre':<30}{'Turno':<20}Sala")
-                for evento in eventos:
-                    claveEvento, fecha, nombreEvento, turno, sala = evento
-                    print(f"{claveEvento:<10}{fecha.strftime("%m-%d-%Y"):<20}{nombreEvento:<30}{turno:<20}{sala}")
-                print("*" * 100)
-
                 while True:
+                    print(f"\nEVENTOS REGISTRADOS ENTRE EL {inicioRango.strftime('%d %b %Y')} Y EL {finRango.strftime('%d %b %Y')}:")
+                    print("*" * 100)
+                    print(f"{'Clave':<10}{'Fecha':<20}{'Nombre':<30}{'Turno':<20}Sala")
+                    for evento in eventos:
+                        claveEvento, fecha, nombreEvento, turno, sala = evento
+                        fecha_dt = dt.datetime.strptime(fecha, "%Y-%m-%d") if isinstance(fecha, str) else fecha
+                        print(f"{claveEvento:<10}{fecha_dt.strftime('%m-%d-%Y'):<20}{nombreEvento:<30}{nombresTurnos.get(turno):<20}{sala}")
+                    print("*" * 100)
                     try:
                         eventoEditando = int(input("\nIngresa la clave del evento que deseas renombrar: "))
                     except ValueError:
@@ -472,7 +473,6 @@ def editarEvento():
                 miCursor.execute("UPDATE reservaciones SET nombreEvento = ? WHERE rowid = ?;", (nuevoNombre, eventoEditando))
                 print(f"✓ El nombre del evento con clave {eventoEditando} fue editado a '{nuevoNombre}' exitosamente.\n")
                 break
-
         except Error as e:
             print(f"⚠︎ Error al acceder a la base de datos: {e}")
             return
@@ -543,6 +543,7 @@ def menu():
         elif opcion.lower() == "f":
             opcionSalir = input("¿Guardar y salir? (S/N) ").upper()
             if opcionSalir == "S":
+                print("✓ Datos del sistema guardados exitosamente en 'estado.db'.")
                 print("Saliendo...")
                 break
             elif opcionSalir == "N":
